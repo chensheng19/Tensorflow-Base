@@ -95,16 +95,17 @@ with sv.managed_session(server.target) as sess:
     print(global_step.eval(session=sess))
 
     for epoch in range(global_step.eval(session=sess),training_epochs*len(train_X)):
-        _,epoch = sess.run([opt,global_step],feed_dict={X:x,Y:y})
-        summary_str = sess.run(merged_summary_op,feed_dict={X:x,Y:y}) #生成summary
-        sv.summary_computed(sess,summary_str,global_step=epoch) #将summary写入文件
-
-        if epoch % display_step == 0:
-            loss = sess.run(cost,feed_dict={X:train_X,Y:train_Y})
-            print("Epoch:",epoch+1,"cost:",loss,"W:",sess.run(W),"b:",sess.run(b))
-            if not (loss=="NA"):
-                plotdata["batchsize"].append(epoch)
-                plotdata["loss"].append(loss)
+        for (x,y) in zip(train_X,train_Y):
+            _,epoch = sess.run([opt,global_step],feed_dict={X:x,Y:y})
+            summary_str = sess.run(merged_summary_op,feed_dict={X:x,Y:y}) #生成summary
+            sv.summary_computed(sess,summary_str,global_step=epoch) #将summary写入文件
+    
+            if epoch % display_step == 0:
+                loss = sess.run(cost,feed_dict={X:train_X,Y:train_Y})
+                print("Epoch:",epoch+1,"cost:",loss,"W:",sess.run(W),"b:",sess.run(b))
+                if not (loss=="NA"):
+                    plotdata["batchsize"].append(epoch)
+                    plotdata["loss"].append(loss)
 
     print("Finished!")
     sv.saver.save(sess,"log/mnist_with_summaries/"+"sv.cpk",global_step=epoch)
